@@ -1,0 +1,12 @@
+{
+  "name": "IXIHold'em",
+  "description": "Simple 2-player Texas Hold'em poker mini app with IXI onchain entry fee and prize claim.",
+  "version": "1.0.0",
+  "author": "BRKZ",
+  "main": "index.html",
+  "spixi": {
+    "minVersion": "0.1.0",
+    "apiVersion": "1",
+    "icon": "icon.png"
+  }
+}

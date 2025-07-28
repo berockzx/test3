@@ -1,0 +1,47 @@
+# IXIHold'em Mini App
+
+Simple 2-player Texas Hold'em poker mini app for the Ixian blockchain using Spixi Mini Apps SDK.
+
+---
+
+## Game Logic
+
+- Two players join by sending 100 IXI entry fee each to the app wallet.
+- When 2 players joined, the game starts automatically.
+- Each player gets 2 random cards.
+- Community cards are dealt in rounds: Flop (3 cards), Turn (1 card), River (1 card).
+- Winner is randomly chosen for simplicity (can be improved later).
+- Winner claims the prize (180 IXI) by sending a chat message to the app wallet.
+
+---
+
+## Blockchain & Spixi SDK Integration
+
+- Entry fee deposits are monitored via `spixi.hooks.onDeposit`.
+- Deposits are verified on-chain for correctness (amount and address).
+- Prize is not automatically sent; winner must claim it via chat message.
+- The app address is the same for receiving deposits and sending prizes.
+
+---
+
+## Setup and Testing
+
+- Replace `APP_ADDRESS` in `index.js` with your real Ixian wallet address.
+- Deploy the mini app using Spixi Mini Apps SDK environment.
+- Test sending IXI from two different wallets.
+- Once both deposits confirmed, game starts.
+- Winner is randomly selected and can claim prize.
+
+---
+
+## Notes
+
+- This is a simplified implementation focused on mainnet real IXI deposits.
+- The poker logic can be enhanced for real hand evaluations.
+- Prize payout must be done manually by the operator after claim message.
+
+---
+
+## License
+
+MIT

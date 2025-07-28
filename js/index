@@ -1,0 +1,139 @@
+import { SpixiMiniApp } from "https://cdn.jsdelivr.net/gh/ixian-platform/Spixi-Mini-Apps@main/sdk/spixi.min.js";
+
+const ENTRY_FEE = 100;
+const PRIZE_AMOUNT = 180;
+const APP_ADDRESS = "59rxvLjmDzXG7bXTKJ2SgbLvV4p7hdBZ8xxCDhhKqGtVggCrzTWiGP4CmhyqFcBb3";
+
+let spixi;
+let playerAddresses = [];
+let playerHands = {};
+let communityCards = [];
+let gameStarted = false;
+
+const statusDiv = document.getElementById("status");
+const gameDiv = document.getElementById("game");
+const playersDiv = document.getElementById("players");
+const communityDiv = document.getElementById("community-cards");
+const claimPrizeBtn = document.getElementById("claimPrizeBtn");
+
+async function init() {
+  spixi = await SpixiMiniApp.init();
+
+  statusDiv.textContent = "Waiting for players to deposit 100 IXI each...";
+
+  spixi.hooks.onDeposit(async (tx) => {
+    if (tx.amount >= ENTRY_FEE && tx.to === APP_ADDRESS) {
+      const valid = await spixi.hooks.verifyDeposit(tx, ENTRY_FEE, 2);
+      if (valid) {
+        addPlayer(tx.from);
+      }
+    }
+  });
+
+  claimPrizeBtn.addEventListener("click", claimPrize);
+}
+
+function addPlayer(address) {
+  if (playerAddresses.includes(address)) return;
+  if (playerAddresses.length >= 2) return;
+
+  playerAddresses.push(address);
+  playerHands[address] = [];
+
+  updateStatus(`Player ${playerAddresses.length} joined: ${address}`);
+
+  if (playerAddresses.length === 2) {
+    startGame();
+  }
+}
+
+function updateStatus(text) {
+  statusDiv.textContent = text;
+}
+
+function startGame() {
+  gameStarted = true;
+  updateStatus("Game started! Dealing cards...");
+  gameDiv.style.display = "block";
+
+  for (let addr of playerAddresses) {
+    playerHands[addr] = dealCards(2);
+  }
+
+  communityCards = [];
+
+  showHands();
+  runRounds();
+}
+
+function dealCards(num) {
+  const suits = ["♠", "♥", "♦", "♣"];
+  const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+
+  function randomCard() {
+    const suit = suits[Math.floor(Math.random() * suits.length)];
+    const rank = ranks[Math.floor(Math.random() * ranks.length)];
+    return rank + suit;
+  }
+
+  let cards = [];
+  while (cards.length < num) {
+    let card = randomCard();
+    if (!cards.includes(card)) cards.push(card);
+  }
+  return cards;
+}
+
+function showHands() {
+  playersDiv.innerHTML = "";
+  playerAddresses.forEach((addr, i) => {
+    playersDiv.innerHTML += `<div><strong>Player ${i + 1} (${addr}):</strong> ${playerHands[addr].join(", ")}</div>`;
+  });
+  communityDiv.innerHTML = `<strong>Community Cards:</strong> ${communityCards.join(", ")}`;
+}
+
+async function runRounds() {
+  await delay(2000);
+  communityCards = dealCards(3);
+  updateStatus("Flop revealed.");
+  showHands();
+
+  await delay(2000);
+  communityCards.push(...dealCards(1));
+  updateStatus("Turn revealed.");
+  showHands();
+
+  await delay(2000);
+  communityCards.push(...dealCards(1));
+  updateStatus("River revealed.");
+  showHands();
+
+  await delay(2000);
+  evaluateWinner();
+}
+
+function evaluateWinner() {
+  const winnerIndex = Math.floor(Math.random() * 2);
+  const winnerAddr = playerAddresses[winnerIndex];
+  updateStatus(`Player ${winnerIndex + 1} (${winnerAddr}) wins!`);
+
+  claimPrizeBtn.style.display = "inline-block";
+  claimPrizeBtn.disabled = false;
+  claimPrizeBtn.dataset.winner = winnerAddr;
+}
+
+function claimPrize() {
+  const winner = claimPrizeBtn.dataset.winner;
+  if (!winner) return;
+
+  spixi.chat.open(APP_ADDRESS, `Hi, I (${winner}) won IXIHold'em and would like to claim the prize.`);
+
+  updateStatus("Claim message sent. Waiting for prize payment from operator.");
+  claimPrizeBtn.disabled = true;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+init();
